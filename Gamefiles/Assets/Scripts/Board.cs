@@ -6,40 +6,53 @@ public class Board : MonoBehaviour, IEnumerable<Tile>
 {
     Tile[] _tiles;
 
+    /// <summary>
+    ///     The prefab of the Tile game component
+    /// </summary>
+    /// <remarks>
+    ///     As a standard the tile prefab must be a 1x1 hexagon, must have a Tile component, and preferably have a collider attached.
+    /// </remarks>
     public GameObject TilePrefab;
 
     void Awake()
     {
-        _tiles = new Tile[64];
-        for (int i = 0; i < 64; i++)
+        EmptyBoard(12, 6);
+    }
+
+    public void EmptyBoard(int width, int height)
+    {
+        _tiles = new Tile[width * height];
+        for (int i = 0; i < width * height; i++)
         {
-            GameObject go = Instantiate(TilePrefab) as GameObject; //GameObject.CreatePrimitive(PrimitiveType.Cube);
+            GameObject go = Instantiate(TilePrefab) as GameObject;
             go.name = "Tile" + i;
 
-            var relativePosition = new Vector3(i % 8, -(i / 8));
+            //The local position within the board
+            var localPos = new Vector3(i % width, i / width);
 
-            if((i/8)%2 != 0)
+            _tiles[i] = go.GetComponent<Tile>();
+
+            if (localPos.x > 0)
             {
-                relativePosition.x += 0.5f;
+                _tiles[i].AddNeighbor(_tiles[i - 1]);
+            }
+            if (localPos.y > 0)
+            {
+                _tiles[i].AddNeighbor(_tiles[i - width]);
+                if (localPos.y % 2 == 0 && localPos.x > 0)
+                    _tiles[i].AddNeighbor(_tiles[i - width - 1]);
+                else if (localPos.y % 2 != 0 && localPos.x != width - 1)
+                    _tiles[i].AddNeighbor(_tiles[i - width + 1]);
             }
 
-            go.transform.position = transform.position + relativePosition;
+            if (localPos.y % 2 != 0)
+            {
+                localPos.x += 0.5f;
+            }
+            localPos.y *= -1;// -0.8f;
+
+            go.transform.position = transform.position + localPos;
             go.transform.parent = this.transform;
-
-            _tiles[i] = go.AddComponent<Tile>();
-
-            if(i%8 > 0)
-            {
-                _tiles[i].AddNeighbor(_tiles[i-1]);
-            }
-            if(i >= 8)
-            {
-                _tiles[i].AddNeighbor(_tiles[i-8]);
-                if ((i / 8) % 2 == 0 && i % 8 > 0) 
-                    _tiles[i].AddNeighbor(_tiles[i - 9]);
-                else if((i / 8) % 2 != 0 && i % 8 < 7)
-                    _tiles[i].AddNeighbor(_tiles[i - 7]);
-            }
         }
     }
 
